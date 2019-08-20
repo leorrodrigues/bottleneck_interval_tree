@@ -3,28 +3,29 @@
 #include "interval_tree.hpp"
 
 int main(){
-	Interval_Tree::Interval_Tree *interval_tree = new Interval_Tree::Interval_Tree();
+	Interval_Tree::Interval_Tree *interval_tree = new Interval_Tree::Interval_Tree(100);
 	unsigned int op=1;
 	int key=0, key2=0;
+	float capacity=0;
 	while(op!=0) {
 		std::cin>>op;
 		switch(op) {
 		case 1:
-			std::cin>>key>>key2;
-			interval_tree->insert(key,key2);
+			std::cin>>key>>key2>>capacity;
+			interval_tree->insert(key,key2,capacity);
 			break;
 		case 2:
 			std::cin>>key>>key2;
 			interval_tree->remove(key,key2);
 			break;
 		case 3:
-			std::cin>>key;
+			std::cin>>key>>key2;
 			{
-				Interval_Tree::node_t* temp = interval_tree->search(key);
-				if(temp!=NULL)
-					std::cout<<"Node ["<<temp->interval[0]<<temp->interval[1]<<"] found!\n";
-				else
-					std::cout<<"Node not found\n";
+				float cap = interval_tree->getMinCapacityInterval(key,key2);
+				// if(temp!=NULL)
+				std::cout<<"Node ["<<key<<";"<<key2<<"] found! Capacity "<<cap<<"\n";
+				// else
+				// 	std::cout<<"Node not found\n";
 			}
 			break;
 		case 4:

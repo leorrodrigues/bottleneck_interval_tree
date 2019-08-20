@@ -1,8 +1,10 @@
 #ifndef _INTERVAL_TREE_
 #define _INTERVAL_TREE_
 
-#include <stdio.h>
+#include <stdlib.h>
 #include <limits.h>
+#include <stdio.h>
+#include <string.h>
 
 namespace Interval_Tree {
 typedef struct node_t {
@@ -168,8 +170,8 @@ void insert(int interval_min = 0, int interval_max = -1, float capacity = 0){
 	new_node->interval[1] = interval_max;
 
 	new_node->capacity = capacity;
-	new_node->capacity_rt = INT_MAX;
-	new_node->capacity_lt = INT_MAX;
+	new_node->capacity_rt = tree->capacity;
+	new_node->capacity_lt = tree->capacity;
 
 	new_node->max_int_rt = INT_MIN;
 	new_node->min_int_rt = INT_MAX;
@@ -237,6 +239,7 @@ void insert(int interval_min = 0, int interval_max = -1, float capacity = 0){
 }
 
 //TODO
+// A PRINCIPIO ESTÁ FUNCIONANDO, TEM QUE REALIZAR MAIS TESTES PARA VER SE AS ROTAÇÕES E TUDO ESTÁ OK.
 void remove(int key, int s_key){//key = min_interval, s_key = max_interval
 	node_t ***path = NULL;
 	if(tree->root == NULL) //empty tree
@@ -331,6 +334,8 @@ void remove(int key, int s_key){//key = min_interval, s_key = max_interval
 			}
 			if((*path[index])->min_int_rt <= (*path[index])->right->interval[0])
 				(*path[index])->min_int_rt = (*path[index])->right->interval[0];
+			if((*path[index])->capacity_rt > (*path[index])->right->capacity)
+				(*path[index])->capacity_rt = (*path[index])->right->capacity;
 		}
 
 		if((*path[index])->left!=NULL) {
@@ -338,6 +343,8 @@ void remove(int key, int s_key){//key = min_interval, s_key = max_interval
 				(*path[index])->max_int_lt = (*path[index])->left->interval[1];
 			if((*path[index])->min_int_lt <= (*path[index])->left->interval[0])
 				(*path[index])->min_int_lt = (*path[index])->left->interval[0];
+			if((*path[index])->capacity_lt > (*path[index])->left->capacity)
+				(*path[index])->capacity_lt = (*path[index])->left->capacity;
 		}
 		index--; // the node has been deleted, so it's needed to return the index by one.
 	}
@@ -347,17 +354,26 @@ void remove(int key, int s_key){//key = min_interval, s_key = max_interval
 }
 
 //TODO
-node_t *search(int key){
-	node_t *temp = tree->root;
-	while(temp!=NULL) {
-		if(key > temp->interval[0])
-			temp = temp->right;
-		else if(key < temp->interval[0])
-			temp = temp->left;
-		else
-			return temp;
+float getMinCapacityInterval(int p_key, int s_key){ // retorna um vetor com todos os nós que possuem o intervalo
+	node_t** queue = (node_t**)malloc(sizeof(node_t*)*(tree->root->size+1));//malloc the tree's size (worst case).
+	float min_cap = tree->capacity; //the maximum capacity is the tree capacity
+	int index=-1,aux=0, size = tree->root->size+1;
+
+	queue[0] = tree->root;
+
+	while(queue[++index] != NULL && index < size) {
+		if(queue[index]==NULL) printf("NAO FAZ SENTIDO\n");
+		if( p_key<=queue[index]->interval[1] && queue[index]->interval[0]<=s_key && queue[index]->capacity<min_cap) {
+			min_cap = queue[index]->capacity; //get the min capacity of the overlaped node
+		}
+		if(p_key <= queue[index]->max_int_lt && queue[index]->min_int_lt <= s_key) {
+			queue[++aux] = queue[index]->left;
+		}
+		if(p_key <= queue[index]->max_int_rt && queue[index]->min_int_rt <= s_key) {
+			queue[++aux] = queue[index]->right;
+		}
 	}
-	return NULL;
+	return min_cap;
 }
 
 };
