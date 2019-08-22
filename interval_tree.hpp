@@ -13,13 +13,6 @@ typedef struct node_t {
 	int height; // The height of the subtree
 
 	float capacity; // The total ammount of capacity the current node has available
-	float capacity_rt; // The minimum available capacity in the right subtree
-	float capacity_lt; // The minimum available capacity in the left subtree
-
-	int max_int_rt; // The maximum interval of the left subtree
-	int min_int_rt; // The miminum interval of the left subtree
-	int max_int_lt; // The maximum interval of the left subtree
-	int min_int_lt; // The miminum interval of the left subtree
 
 	node_t *left;
 	node_t *right;
@@ -89,12 +82,12 @@ void show_bf(node_t *node,unsigned int tab){
 	if(node==NULL) {
 		for(i=0; i<tab; i++)
 			printf("\t");
-		printf("Node : NULL\n");
+		printf("Node: NULL\n");
 		return;
 	}
 	for(i=0; i<tab; i++)
 		printf("\t");
-	printf("Node in [%d;%d] # Elements: %u # Height %d # Capacity: %f # MiL %d # MaL %d # MiR %d # MaR %d # CR %f # CL %f\n", node->interval[0], node->interval[1], node->size, node->height, node->capacity, node->min_int_lt, node->max_int_lt, node->min_int_rt, node->max_int_rt, node->capacity_rt, node->capacity_lt);
+	printf("Node in [%d,%d] # Elements: %u # Height %d # Capacity: %f\n", node->interval[0], node->interval[1], node->size, node->height, node->capacity);
 	show_bf(node->left,tab+1);
 	show_bf(node->right,tab+1);
 }
@@ -133,7 +126,7 @@ void show(){
 	}
 }
 
-void insert(int interval_min = 0, int interval_max = -1, float capacity = 0){
+void insert(int interval_min, int interval_max, float capacity){
 	node_t **path = NULL;
 	int index=-1;
 	int key = interval_min;
@@ -141,7 +134,7 @@ void insert(int interval_min = 0, int interval_max = -1, float capacity = 0){
 
 	//allocate the paths size
 	if(tree->root != NULL) {
-		path = (node_t**)malloc(sizeof(node_t*)*(tree->root->height+1)); //allocate the total ammount needed to build the path
+		path = (node_t**)malloc(sizeof(node_t*)*(tree->root->height+2)); //allocate the total ammount needed to build the path
 	}
 
 	//iterate through the tree to get the nodes
@@ -170,63 +163,42 @@ void insert(int interval_min = 0, int interval_max = -1, float capacity = 0){
 	new_node->interval[1] = interval_max;
 
 	new_node->capacity = capacity;
-	new_node->capacity_rt = tree->capacity;
-	new_node->capacity_lt = tree->capacity;
-
-	new_node->max_int_rt = INT_MIN;
-	new_node->min_int_rt = INT_MAX;
-	new_node->max_int_lt = INT_MIN;
-	new_node->min_int_lt = INT_MAX;
 
 	if(index==-1) {
 		tree->root=new_node;
 	}else{
-		if(key > path[index]->interval[0]) path[index]->right = new_node; else path[index]->left = new_node;
+		if(key > path[index]->interval[0])
+			path[index]->right = new_node;
+		else
+			path[index]->left = new_node;
+
 		++path[index]->size;
+		path[++index]=new_node;
 	}
-
 	int bf;
-
-	while(index>=0) {    // returning the path, updating the nodes' height and check if is needed to make some rotation.
+	while(index>=0) {         // returning the path, updating the nodes' height and check if is needed to make some rotation.
 		//updating the height
 		path[index]->height = getMax(getHeight(path[index]->left),getHeight(path[index]->right)) + 1;
 
 		path[index]->size = getSize(path[index]->left)+getSize(path[index]->right);
 
-		if(key >= path[index]->interval[0]) {
-			if(path[index]->max_int_rt < new_node->interval[1])
-				path[index]->max_int_rt = new_node->interval[1];
-			if(path[index]->min_int_rt > new_node->interval[0])
-				path[index]->min_int_rt = new_node->interval[0];
-			if(path[index]->capacity_rt > new_node->capacity)
-				path[index]->capacity_rt = new_node->capacity;
-		}
-		else{
-			if(path[index]->max_int_lt < new_node->interval[1])
-				path[index]->max_int_lt = new_node->interval[1];
-			if(path[index]->min_int_lt > new_node->interval[0])
-				path[index]->min_int_lt = new_node->interval[0];
-			if(path[index]->capacity_lt > new_node->capacity)
-				path[index]->capacity_lt = new_node->capacity;
-		}
-
 		//check the balancing factor
 		bf = getBF(path[index]);
 
-		if(bf > 1 && key > path[index]->right->interval[0]) { // single left
+		if(bf > 1 && key > path[index]->right->interval[0]) {         // single left
 			single_rotate_left(path[index]);
 			bf = getBF(path[index]);
 		}
-		if(bf < -1 && key < path[index]->left->interval[0]) { // single right
+		if(bf < -1 && key < path[index]->left->interval[0]) {         // single right
 			single_rotate_right(path[index]);
 			bf = getBF(path[index]);
 		}
-		if(bf > 1 && key < path[index]->right->interval[0]) { // double left
+		if(bf > 1 && key < path[index]->right->interval[0]) {         // double left
 			single_rotate_right(path[index]->right);
 			single_rotate_left(path[index]);
 			bf = getBF(path[index]);
 		}
-		if(bf < -1 && key > path[index]->left->interval[0]) { // double right
+		if(bf < -1 && key > path[index]->left->interval[0]) {         // double right
 			single_rotate_left(path[index]->left);
 			single_rotate_right(path[index]);
 			bf = getBF(path[index]);
@@ -238,25 +210,22 @@ void insert(int interval_min = 0, int interval_max = -1, float capacity = 0){
 	path=NULL;
 }
 
-//TODO
-// A PRINCIPIO ESTÁ FUNCIONANDO, TEM QUE REALIZAR MAIS TESTES PARA VER SE AS ROTAÇÕES E TUDO ESTÁ OK.
-void remove(int key, int s_key){//key = min_interval, s_key = max_interval
+void remove(int key, int s_key){        //key = min_interval, s_key = max_interval
 	node_t ***path = NULL;
-	if(tree->root == NULL) //empty tree
+	if(tree->root == NULL)         //empty tree
 		return;
 	else
-		path = (node_t***)malloc(sizeof(node_t**)*(tree->root->height+2)); //allocate the total ammount needed to build the path, it's a ternary pointer to store all the original pointers of Interval_Tree
+		path = (node_t***)malloc(sizeof(node_t**)*(tree->root->height+2));         //allocate the total ammount needed to build the path, it's a ternary pointer to store all the original pointers of Interval_Tree
 
 	int index=-1;
 
-	// printf("Start the search\n");
 	{
 		node_t **aux = &tree->root;
-		while(*aux != NULL) {//while not found a empty child
+		while(*aux != NULL) {        //while not found a empty child
 			++index;
-			path[index] = &(*aux); // update the path
-			if((*aux)->interval[0] == key) { // equal keys aren't allowed
-				break; // find the node
+			path[index] = &(*aux);         // update the path
+			if((*aux)->interval[0] == key) {         // equal keys aren't allowed
+				break;         // find the node
 			}
 			aux = key > (*aux)->interval[0] ? &(*aux)->right : &(*aux)->left;
 		}
@@ -266,7 +235,7 @@ void remove(int key, int s_key){//key = min_interval, s_key = max_interval
 		}
 		// printf("Both keys found\n");
 		if((*aux)==NULL) {         // didn't find any child that hold the key for deletion
-			free(path);        // Free the parh variable
+			free(path);         // Free the parh variable
 			path=NULL;
 			printf("Don't existis any node that holds the specific interval []%d;%d]\n", key, s_key);
 			return;
@@ -274,9 +243,9 @@ void remove(int key, int s_key){//key = min_interval, s_key = max_interval
 	}
 
 	node_t **temp = NULL;
-	if((*path[index])->size>1) { // the node two children
+	if ((*path[index])->size>1) {         // the node two children
 		temp = &(*path[index])->left;
-		while((*temp)->right!=NULL) { // get the node with the largest key in the left subtree of the selected node to delete
+		while((*temp)->right!=NULL) {         // get the node with the largest key in the left subtree of the selected node to delete
 			temp = &(*temp)->right;
 		}
 		(*temp)->right = (*path[index])->right;
@@ -285,68 +254,45 @@ void remove(int key, int s_key){//key = min_interval, s_key = max_interval
 		std::swap((**path[index]),(**temp));
 		free(*temp);
 		(*temp)=NULL;
-	}
-	else{ // the node has none or one child
-		temp = (*path[index])->left ? &(*path[index])->left : &(*path[index])->right; //getting the children, if don't exists the NULL value is set.
-		if((*temp)==NULL) { //no child
+	} else {         // the node has none or one child
+		temp = (*path[index])->left ? &(*path[index])->left : &(*path[index])->right;         //getting the children, if don't exists the NULL value is set.
+		if((*temp)==NULL) {         //no child
 			free((*path[index]));
 			(*path[index])=NULL;
-		} else{ //one child
-			std::swap((**path[index]),(**temp)); //swap the contents of the non-null child and the selected node.
+		} else{         //one child
+			std::swap((**path[index]),(**temp));         //swap the contents of the non-null child and the selected node.
 			//now delete de child that holds the old selected node contents
 			free(*temp);
 			(*temp)=NULL;
 		}
 	}
 
-
 	int bf;
-	// printf("VOU VERIFICAR OS PESOS\n");
-	while(index>=0) { // returning the path, updating the nodes' height and check if is needed to make some rotation.
+	while(--index>=0) {         // returning the path, updating the nodes' height and check if is needed to make some rotation.
 		//updating the height
 		(*path[index])->height = getMax(getHeight((*path[index])->left),getHeight((*path[index])->right)) + 1;
 		(*path[index])->size = getSize((*path[index])->left)+getSize((*path[index])->right);
 		//check the balancing factor
 		bf = getBF(*path[index]);
-		if(bf > 1 && key > getBF((*path[index])->right)) {         // single left
+
+		if(bf > 1 && getBF((*path[index])->right) >= 0) { // single left
 			single_rotate_left(*path[index]);
 			bf = getBF(*path[index]);
 		}
-		if(bf < -1 && key > getBF((*path[index])->left)) {         // single right
+		if(bf < -1 && getBF((*path[index])->left) < 0) { // single right
 			single_rotate_right(*path[index]);
 			bf = getBF(*path[index]);
 		}
-		if(bf > 1 && key < getBF((*path[index])->right)) {         // double left
+		if(bf > 1 && getBF((*path[index])->right) < 0) {// double left
 			single_rotate_right((*path[index])->right);
 			single_rotate_left(*path[index]);
 			bf = getBF(*path[index]);
 		}
-		if(bf < -1 && key < getBF((*path[index])->left)) {         // double right
+		if(bf < -1 && getBF((*path[index])->left) >= 0) {// double right
 			single_rotate_left((*path[index])->left);
 			single_rotate_right(*path[index]);
 			bf = getBF(*path[index]);
 		}
-
-		if((*path[index])->right!=NULL) {
-
-			if((*path[index])->max_int_rt <= (*path[index])->right->interval[1]) {
-				(*path[index])->max_int_rt = (*path[index])->right->interval[1];
-			}
-			if((*path[index])->min_int_rt <= (*path[index])->right->interval[0])
-				(*path[index])->min_int_rt = (*path[index])->right->interval[0];
-			if((*path[index])->capacity_rt > (*path[index])->right->capacity)
-				(*path[index])->capacity_rt = (*path[index])->right->capacity;
-		}
-
-		if((*path[index])->left!=NULL) {
-			if((*path[index])->max_int_lt <= (*path[index])->left->interval[1])
-				(*path[index])->max_int_lt = (*path[index])->left->interval[1];
-			if((*path[index])->min_int_lt <= (*path[index])->left->interval[0])
-				(*path[index])->min_int_lt = (*path[index])->left->interval[0];
-			if((*path[index])->capacity_lt > (*path[index])->left->capacity)
-				(*path[index])->capacity_lt = (*path[index])->left->capacity;
-		}
-		index--; // the node has been deleted, so it's needed to return the index by one.
 	}
 	if(path!=NULL)
 		free(path);
@@ -354,9 +300,9 @@ void remove(int key, int s_key){//key = min_interval, s_key = max_interval
 }
 
 //TODO
-float getMinCapacityInterval(int p_key, int s_key){ // retorna um vetor com todos os nós que possuem o intervalo
-	node_t** queue = (node_t**)malloc(sizeof(node_t*)*(tree->root->size+1));//malloc the tree's size (worst case).
-	float min_cap = tree->capacity; //the maximum capacity is the tree capacity
+float getMinCapacityInterval(int p_key, int s_key){         // retorna um vetor com todos os nós que possuem o intervalo
+	node_t** queue = (node_t**)malloc(sizeof(node_t*)*(tree->root->size+1));         //malloc the tree's size (worst case).
+	float min_cap = tree->capacity;         //the maximum capacity is the tree capacity
 	int index=-1,aux=0, size = tree->root->size+1;
 
 	queue[0] = tree->root;
@@ -364,12 +310,12 @@ float getMinCapacityInterval(int p_key, int s_key){ // retorna um vetor com todo
 	while(queue[++index] != NULL && index < size) {
 		if(queue[index]==NULL) printf("NAO FAZ SENTIDO\n");
 		if( p_key<=queue[index]->interval[1] && queue[index]->interval[0]<=s_key && queue[index]->capacity<min_cap) {
-			min_cap = queue[index]->capacity; //get the min capacity of the overlaped node
+			min_cap = queue[index]->capacity;         //get the min capacity of the overlaped node
 		}
-		if(p_key <= queue[index]->max_int_lt && queue[index]->min_int_lt <= s_key) {
+		if(queue[index]->left!=NULL && p_key <= queue[index]->left->interval[1] && queue[index]->left->interval[0] <= s_key) {
 			queue[++aux] = queue[index]->left;
 		}
-		if(p_key <= queue[index]->max_int_rt && queue[index]->min_int_rt <= s_key) {
+		if(queue[index]->right!=NULL && p_key <= queue[index]->right->interval[1] && queue[index]->right->interval[0] <= s_key) {
 			queue[++aux] = queue[index]->right;
 		}
 	}
