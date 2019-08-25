@@ -13,28 +13,28 @@ fi
 
 #interval.out
 reset && make && {
-    echo "Program Tests\n";
-    for i in $FILES; do
-        $PROGRAM_NAME < tests/$i > tests/out_$i;
-        cmp tests/result$(echo "${i#case}") tests/out_$i && printf "${BLUE}Test $i [x] ${NC}\n" && rm tests/out_$i || printf "${RED}Test $i []${NC}\n";
-    done;
-
-    echo "Running Tests\n";
+    echo "Running Tests";
     if hash valgrind >/dev/null;
     then
         for i in $FILES; do
-            valgrind --leak-check=full --error-exitcode=121 --log-file="tests/valgrind_$i" $PROGRAM_NAME < tests/$i > tests/out_$i
+            valgrind --leak-check=full --error-exitcode=121 --log-file="tests/memory_leak_$i" $PROGRAM_NAME < tests/$i > tests/out_$i
             if [ $? -eq 0 ]
             then
                 printf "${BLUE}Memory Test $i [x] ${NC}\n";
-                rm tests/out_$i tests/valgrind_$i;
+                rm tests/memory_leak_$i;
             else
                  printf "${YELLOW}Memory Test $i [] (check the logs in /tests/ folder)${NC}\n";
             fi;
         done;
-        rm -r vgcore*
+        rm -rf *core* tests/valgrind* tests/core*
     else
         print "${RED} Need to install Valgrind${NC}\n";
     fi
+
+    echo "Program Tests";
+    for i in $FILES; do
+        #$PROGRAM_NAME < tests/$i > tests/out_$i;
+        cmp tests/result$(echo "${i#case}") tests/out_$i && printf "${BLUE}Test $i [x] ${NC}\n" && rm tests/out_$i || printf "${RED}Test $i []${NC}\n";
+    done;
 
 } || printf "${RED} Erro na compilação${NC}\n"

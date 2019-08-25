@@ -8,12 +8,27 @@
 #include <unistd.h>
 
 namespace Interval_Tree {
+
+typedef struct node_interval_t {
+	int min;
+	int max;
+	float capacity;
+	node_interval_t *next;
+} node_interval_t;
+
+typedef struct interval_t {
+	int size;
+	node_interval_t *nodes;
+} interval_t;
+
 typedef struct node_t {
 	unsigned int size; // the total ammount of children the node has.
 	int interval[2]; // The interval that the node has [_,-1] to define infinity
 	int height; // The height of the subtree
 
+
 	float capacity; // The total ammount of capacity the current node has available
+
 
 	node_t *left;
 	node_t *right;
@@ -145,9 +160,27 @@ void insert(int interval_min, int interval_max, float capacity){
 			path[index] = aux;
 			aux = interval_min > aux->interval[0] ? aux->right : aux->left;
 		}
-		//check if the low interval are equal.
-		if(interval_min == aux->interval[0]) {
-			//iterate through the nodes that has the same low interval to check the hight interval. If exists a node with the same [a,b] interval, just add the total ammount of
+
+		//iterate through the nodes that has the same low interval to check the hight interval. If exists a node with the same [a,b] interval, just add the total ammount of
+		while(aux!=NULL && aux->interval[1] != interval_max) {
+			if(interval_max >= aux->interval[1]) {
+				if(aux->right != NULL)
+					aux = aux->right;
+				else
+					break;
+			} else{
+				if(aux->left != NULL)
+					aux = aux->left;
+				else
+					break;
+			}
+		}
+
+		if(aux!=NULL && aux->interval[0] == interval_min && aux->interval[1] == interval_max) {
+			aux->capacity+=capacity;
+			free(path);
+			path=NULL;
+			return;
 		}
 	}
 
@@ -213,7 +246,7 @@ void insert(int interval_min, int interval_max, float capacity){
 	path=NULL;
 }
 
-void remove(int key, int s_key){        //key = min_interval, s_key = max_interval
+void remove(int key, int s_key, float capacity = 0){        //key = min_interval, s_key = max_interval
 	node_t **path = NULL;
 	if(tree->root == NULL)         //empty tree
 		return;
@@ -236,12 +269,23 @@ void remove(int key, int s_key){        //key = min_interval, s_key = max_interv
 		while(aux != NULL && aux->interval[1] != s_key) {
 			aux = s_key > aux->interval[1] ? aux->right : aux->left;
 		}
-		// printf("Both keys found\n");
 		if(aux==NULL) {         // didn't find any child that hold the key for deletion
 			free(path);         // Free the parh variable
 			path=NULL;
 			printf("Don't existis any node that holds the specific interval [%d;%d]\n", key, s_key);
 			return;
+		}else if(aux->interval[1] == s_key) {
+			aux->capacity-=capacity;
+			if(aux->capacity<0) {
+				printf("Error Negative Capacity\n");
+				free(path);
+				path=NULL;
+				exit(0);
+			}else if(aux->capacity > 0) {
+				free(path);
+				path=NULL;
+				return;
+			}
 		}
 	}
 

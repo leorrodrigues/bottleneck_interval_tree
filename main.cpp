@@ -15,8 +15,8 @@ int main(){
 			interval_tree->insert(key,key2,capacity);
 			break;
 		case 2:
-			scanf("%d %d",&key,&key2);
-			interval_tree->remove(key,key2);
+			scanf("%d %d %f",&key,&key2, &capacity);
+			interval_tree->remove(key,key2,capacity);
 			break;
 		case 3:
 			scanf("%d %d", &key, &key2);
