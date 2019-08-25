@@ -16,11 +16,11 @@ Inserting either an 8 or a 15 (for example) into any of these trees will trigger
 
 Case 1a: Insert 15
 
-  20+         15
- /           /  \
-4     =>    4    20
-  \
-   15
+  20+        20        15
+ /          /         /  \
+4     =>   15   =>   4    20
+  \       /
+   15    4
 
 Case 2a: Insert 15
 

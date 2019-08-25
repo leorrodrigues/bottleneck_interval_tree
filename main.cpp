@@ -8,18 +8,18 @@ int main(){
 	int key=0, key2=0;
 	float capacity=0;
 	while(op!=0) {
-		std::cin>>op;
+		scanf("%d ",&op);
 		switch(op) {
 		case 1:
-			std::cin>>key>>key2>>capacity;
+			scanf("%d %d %f",&key,&key2,&capacity);
 			interval_tree->insert(key,key2,capacity);
 			break;
 		case 2:
-			std::cin>>key>>key2;
+			scanf("%d %d",&key,&key2);
 			interval_tree->remove(key,key2);
 			break;
 		case 3:
-			std::cin>>key>>key2;
+			scanf("%d %d", &key, &key2);
 			{
 				float cap = interval_tree->getMinCapacityInterval(key,key2);
 				// if(temp!=NULL)
@@ -35,7 +35,7 @@ int main(){
 			delete(interval_tree);
 			break;
 		default:
-			std::cout<<"Valor invalido\n";
+			std::cout<<"Valor invalido "<<op<<"\n";
 			break;
 		}
 	}

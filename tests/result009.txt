@@ -1,0 +1,1 @@
+The Bottleneck Interval Tree don't has any elements.

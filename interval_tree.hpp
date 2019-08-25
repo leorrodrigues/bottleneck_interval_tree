@@ -5,6 +5,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 namespace Interval_Tree {
 typedef struct node_t {
@@ -47,7 +48,6 @@ inline int getBF(node_t* node){
 inline void single_rotate_left(node_t* x){
 	node_t *temp =  x->right;
 
-	//TODO retirar o std::swap
 	std::swap((*x),((*x->right)));
 
 	temp->right = x->left;
@@ -64,7 +64,6 @@ inline void single_rotate_left(node_t* x){
 inline void single_rotate_right(node_t* x){
 	node_t *temp =  x->left;
 
-	//TODO retirar o std::swap
 	std::swap((*x),((*x->left)));
 
 	temp->left = x->right;
@@ -141,10 +140,14 @@ void insert(int interval_min, int interval_max, float capacity){
 	{
 		node_t *aux = tree->root;
 
-		while(aux != NULL) {//while not found an empty child
+		while(aux != NULL && aux->interval[0] != interval_min) {//while not found an empty child and the current node dont has the same low interval of the new node
 			++index;
 			path[index] = aux;
 			aux = interval_min > aux->interval[0] ? aux->right : aux->left;
+		}
+		//check if the low interval are equal.
+		if(interval_min == aux->interval[0]) {
+			//iterate through the nodes that has the same low interval to check the hight interval. If exists a node with the same [a,b] interval, just add the total ammount of
 		}
 	}
 
@@ -211,88 +214,158 @@ void insert(int interval_min, int interval_max, float capacity){
 }
 
 void remove(int key, int s_key){        //key = min_interval, s_key = max_interval
-	node_t ***path = NULL;
+	node_t **path = NULL;
 	if(tree->root == NULL)         //empty tree
 		return;
 	else
-		path = (node_t***)malloc(sizeof(node_t**)*(tree->root->height+2));         //allocate the total ammount needed to build the path, it's a ternary pointer to store all the original pointers of Interval_Tree
+		path = (node_t**)malloc(sizeof(node_t*)*(tree->root->height+2));         //allocate the total ammount needed to build the path, it's a ternary pointer to store all the original pointers of Interval_Tree
 
 	int index=-1;
 
 	{
-		node_t **aux = &tree->root;
-		while(*aux != NULL) {        //while not found a empty child
+		node_t *aux = tree->root;
+		while(aux != NULL) {        //while not found a empty child
 			++index;
-			path[index] = &(*aux);         // update the path
-			if((*aux)->interval[0] == key) {         // equal keys aren't allowed
+			path[index] = aux;         // update the path
+			if(aux->interval[0] == key) {         // equal keys aren't allowed
 				break;         // find the node
 			}
-			aux = key > (*aux)->interval[0] ? &(*aux)->right : &(*aux)->left;
+			aux = key > aux->interval[0] ? aux->right : aux->left;
 		}
 		// printf("Key found! Cheking for Skey\n");
-		while(*aux != NULL && (*aux)->interval[1] != s_key) {
-			aux = s_key > (*aux)->interval[1] ? &(*aux)->right : &(*aux)->left;
+		while(aux != NULL && aux->interval[1] != s_key) {
+			aux = s_key > aux->interval[1] ? aux->right : aux->left;
 		}
 		// printf("Both keys found\n");
-		if((*aux)==NULL) {         // didn't find any child that hold the key for deletion
+		if(aux==NULL) {         // didn't find any child that hold the key for deletion
 			free(path);         // Free the parh variable
 			path=NULL;
-			printf("Don't existis any node that holds the specific interval []%d;%d]\n", key, s_key);
+			printf("Don't existis any node that holds the specific interval [%d;%d]\n", key, s_key);
 			return;
 		}
 	}
 
-	node_t **temp = NULL;
-	if ((*path[index])->size>1) {         // the node two children
-		temp = &(*path[index])->left;
-		while((*temp)->right!=NULL) {         // get the node with the largest key in the left subtree of the selected node to delete
-			temp = &(*temp)->right;
-		}
-		(*temp)->right = (*path[index])->right;
-		(*temp)->left = (*path[index])->left;
+	int index_sub = index;
 
-		std::swap((**path[index]),(**temp));
-		free(*temp);
-		(*temp)=NULL;
-	} else {         // the node has none or one child
-		temp = (*path[index])->left ? &(*path[index])->left : &(*path[index])->right;         //getting the children, if don't exists the NULL value is set.
-		if((*temp)==NULL) {         //no child
-			free((*path[index]));
-			(*path[index])=NULL;
+	node_t *temp = (node_t*) malloc(sizeof(node_t));
+	if (path[index_sub]->size>1) {         // the node two children
+		temp = path[index_sub]->left;
+		path[++index_sub] = path[index_sub]->left;
+		while(temp->right != NULL) {         // get the node with the largest key in the left subtree of the selected node
+			path[++index_sub] = path[index_sub]->right;
+			temp = temp->right;
+		}
+
+		if(index>0) {
+			if(path[index]->right != temp) {
+				temp->right = path[index]->right;
+			}
+			if(path[index]->left != temp) {
+				temp->left = path[index]->left;
+			}
+			if(path[index-1]->left->interval[0]>temp->interval[0])
+				path[index-1]->left = temp;
+			else
+				path[index-1]->right = temp;
+			if(path[index_sub-1]->left==path[index_sub]) {
+				path[index_sub-1]->left = NULL;
+			} else{
+				path[index_sub-1]->right = NULL;
+			}
+			free(path[index]);
+			path[index] = temp;
+			path[index_sub] = NULL;
+		}else{
+			if(temp != path[index]->right)
+				temp->right = path[index]->right;
+			if(temp != path[index]->left)
+				temp->left = path[index]->left;
+			if(path[index_sub-1]->left == path[index_sub])
+				path[index_sub-1]->left = NULL;
+			else
+				path[index_sub-1]->right = NULL;
+			free(tree->root);
+			path[index] = temp;
+			tree->root = temp;
+		}
+	} else {         // the node has at maximum one child
+		if(path[index_sub]->left==NULL && path[index_sub]->right==NULL) {         //no child
+			if(index_sub>0) {
+				if(path[index_sub-1]->left == path[index_sub]) {
+					free(path[index_sub-1]->left);
+					path[index_sub-1]->left = NULL;
+				} else if(path[index_sub-1]->right == path[index_sub]) {
+					free(path[index_sub-1]->right);
+					path[index_sub-1]->right = NULL;
+				}
+				path[index_sub] = NULL;
+			}else{
+				free(tree->root);
+				tree->root=NULL;
+				path[index] = NULL;
+			}
 		} else{         //one child
-			std::swap((**path[index]),(**temp));         //swap the contents of the non-null child and the selected node.
-			//now delete de child that holds the old selected node contents
-			free(*temp);
-			(*temp)=NULL;
+			if(index_sub>0) {
+				if(path[index_sub]->left != NULL) {
+					temp = path[index_sub]->left;
+				} else {
+					temp = path[index_sub]->right;
+				}
+				if(path[index_sub-1]->left == path[index_sub]) {
+					free(path[index_sub-1]->left);
+					path[index_sub-1]->left = temp;
+				}else{
+					free(path[index_sub-1]->right);
+					path[index_sub-1]->right = temp;
+				}
+				path[index_sub] = temp;
+			}else{
+				if(path[index]->left != NULL)
+					temp = path[index]->left;
+				else
+					temp = path[index]->right;
+				free(tree->root);
+				tree->root = temp;
+				path[index] = temp;
+			}
 		}
 	}
-
+	index = index_sub;         // remove the last element index
 	int bf;
-	while(--index>=0) {         // returning the path, updating the nodes' height and check if is needed to make some rotation.
+	while(index>=0) {         // returning the path, updating the nodes' height and check if is needed to make some rotation.
 		//updating the height
-		(*path[index])->height = getMax(getHeight((*path[index])->left),getHeight((*path[index])->right)) + 1;
-		(*path[index])->size = getSize((*path[index])->left)+getSize((*path[index])->right);
+		if(path[index]==NULL) {
+			--index;
+			continue;
+		}
+		path[index]->height = getMax(getHeight(path[index]->left),getHeight(path[index]->right)) + 1;
+		path[index]->size = getSize(path[index]->left)+getSize(path[index]->right);
 		//check the balancing factor
-		bf = getBF(*path[index]);
+		bf = getBF(path[index]);
 
-		if(bf > 1 && getBF((*path[index])->right) >= 0) { // single left
-			single_rotate_left(*path[index]);
-			bf = getBF(*path[index]);
+		// printf("BF %d\n",bf);
+		if(bf > 1 && getBF(path[index]->right) >= 0) {         // single left
+			single_rotate_left(path[index]);
+			bf = getBF(path[index]);
 		}
-		if(bf < -1 && getBF((*path[index])->left) < 0) { // single right
-			single_rotate_right(*path[index]);
-			bf = getBF(*path[index]);
+		if(bf < -1 && getBF(path[index]->left) < 0) {         // single right
+			// printf("SINGLE RIGHT\n");
+			single_rotate_right(path[index]);
+			bf = getBF(path[index]);
 		}
-		if(bf > 1 && getBF((*path[index])->right) < 0) {// double left
-			single_rotate_right((*path[index])->right);
-			single_rotate_left(*path[index]);
-			bf = getBF(*path[index]);
+		if(bf > 1 && getBF(path[index]->right) < 0) {         // double left
+			// printf("DOUBLE LEFT\n");
+			single_rotate_right(path[index]->right);
+			single_rotate_left(path[index]);
+			bf = getBF(path[index]);
 		}
-		if(bf < -1 && getBF((*path[index])->left) >= 0) {// double right
-			single_rotate_left((*path[index])->left);
-			single_rotate_right(*path[index]);
-			bf = getBF(*path[index]);
+		if(bf < -1 && getBF(path[index]->left) >= 0) {         // double right
+			// printf("DOUBLE RIGHT\n");
+			single_rotate_left(path[index]->left);
+			single_rotate_right(path[index]);
+			bf = getBF(path[index]);
 		}
+		index--;
 	}
 	if(path!=NULL)
 		free(path);
