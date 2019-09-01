@@ -138,6 +138,64 @@ void copyTree(Interval_Tree *source){
 	queue=NULL;
 }
 
+inline void copyToArray(interval_t *dst){
+	std::stack<node_t*> stack;
+	node_t *current = tree->root;
+	int index=-1;
+	while(true) {
+		while(current!=NULL) {
+			stack.push(current);
+			current = current->left;
+		}
+		if(stack.empty()) return;
+		current = stack.top();
+		stack.pop();
+		dst->nodes[++index].low = current->interval[0];
+		dst->nodes[index].high = current->interval[1];
+		dst->nodes[index].capacity = current->capacity;
+		current = current->right;
+	}
+}
+
+inline bool hasOverlap(int low1, int high1, int low2, int high2){
+	if ((low1 < high2 && low2 < high1) || (low1 > high2 && low2 > high1)) {
+		return true;
+	}
+	return false;
+}
+
+inline node_t *overlapSearch(node_t *start, node_t *node) {
+	int index=-1,aux=-1, size = start->size+1;
+	node_t** queue = (node_t**)calloc(size, sizeof(node_t*)); //malloc the tree's size (worst case).
+	if(start->interval[0] == node->interval[0] && start->interval[1] == node->interval[1]) {
+		if(node->left!=NULL)
+			queue[++aux] = node->left;
+		if(node->right!=NULL)
+			queue[++aux] = node->right;
+	}else{
+		queue[++aux] = start;
+	}
+
+	while(++index < size) {
+		if(queue[index] != NULL) {
+			if(queue[index]->left!=NULL && node->interval[0] <= queue[index]->left->max)
+				queue[++aux] = queue[index]->left;
+
+			if(queue[index]->right!=NULL && node->interval[0] <= queue[index]->right->max) queue[++aux] = queue[index]->right;
+
+			if (queue[index]->interval[0] == node->interval[0] && queue[index]->interval[1] == node->interval[1]) continue;
+
+			if( hasOverlap(node->interval[0], node->interval[1], queue[index]->interval[0], queue[index]->interval[1])) {
+				node_t *temp = queue[index];
+				free(queue);
+				return temp;
+			}
+		}
+	}
+	free(queue);
+	return NULL;
+}
+
 public:
 Interval_Tree(float capacity = 0){
 	if((tree = (interval_tree_t*)calloc(1, sizeof(interval_tree_t)))==NULL) {
@@ -456,73 +514,11 @@ void remove(int key, int s_key, float capacity = 0){        //key = low_interval
 	path=NULL;
 }
 
-inline bool hasOverlap(int low1, int high1, int low2, int high2){
-	if ((low1 < high2 && low2 < high1) || (low1 > high2 && low2 > high1)) {
-		return true;
-	}
-	return false;
-}
-
-float getMinCapacityInterval(int p_key, int s_key){// retorna um float com a menor capacidade do intervalo
-	node_t** queue = (node_t**) calloc ((tree->root->size+1), sizeof(node_t*));         //malloc the tree's size (worst case).
-	float low_cap = tree->capacity;         //the highimum capacity is the tree capacity
-	int index=-1,aux=0, size = tree->root->size+1;
-
-	queue[0] = tree->root;
-
-	while(queue[++index] != NULL && index < size) {
-		if( hasOverlap(p_key, s_key, queue[index]->interval[0], queue[index]->interval[1]) && queue[index]->capacity<low_cap)
-			low_cap = queue[index]->capacity;         //get the low capacity of the overlaped node
-
-		if(queue[index]->left!=NULL && p_key <= queue[index]->left->max)
-			queue[++aux] = queue[index]->left;
-
-		if(queue[index]->right!=NULL && p_key <= queue[index]->right->max)
-			queue[++aux] = queue[index]->right;
-
-	}
-	free(queue);
-	return low_cap;
-}
-
-inline node_t *overlapSearch(node_t *start, node_t *node) {
-	int index=-1,aux=-1, size = start->size+1;
-	node_t** queue = (node_t**)calloc(size, sizeof(node_t*)); //malloc the tree's size (worst case).
-	if(start->interval[0] == node->interval[0] && start->interval[1] == node->interval[1]) {
-		if(node->left!=NULL)
-			queue[++aux] = node->left;
-		if(node->right!=NULL)
-			queue[++aux] = node->right;
-	}else{
-		queue[++aux] = start;
-	}
-
-	while(++index < size) {
-		if(queue[index] != NULL) {
-			if(queue[index]->left!=NULL && node->interval[0] <= queue[index]->left->max)
-				queue[++aux] = queue[index]->left;
-
-			if(queue[index]->right!=NULL && node->interval[0] <= queue[index]->right->max) queue[++aux] = queue[index]->right;
-
-			if (queue[index]->interval[0] == node->interval[0] && queue[index]->interval[1] == node->interval[1]) continue;
-
-			if( hasOverlap(node->interval[0], node->interval[1], queue[index]->interval[0], queue[index]->interval[1])) {
-				node_t *temp = queue[index];
-				free(queue);
-				return temp;
-			}
-		}
-	}
-	free(queue);
-	return NULL;
-}
-
 interval_t* getInterval(int p_key, int s_key){// retorna um vetor com todos os intervalos e seus consumos de recursos
 	Interval_Tree result_tree(tree->capacity);
 	{
 		Interval_Tree aux_tree(tree->capacity);
 		//At first, it is needed to transform the tree to make the tree contain only nodes that overlap the interval [p_key, s_key].
-
 		{
 			int index=-1,aux=0, size = tree->root->size+1, low, high;
 			float c;
@@ -555,7 +551,7 @@ interval_t* getInterval(int p_key, int s_key){// retorna um vetor com todos os i
 		{
 			int index=0,aux=0, size = aux_tree.tree->root->size+1, low, high;
 			float c, c_temp;
-			node_t** queue = (node_t**)calloc(size+2, sizeof(node_t*)); //malloc the tree's size (worst case).
+			node_t** queue = (node_t**)calloc(size+3, sizeof(node_t*)); //malloc the tree's size (worst case).
 			node_t *temp = NULL;
 			queue[index] = aux_tree.tree->root;
 
@@ -643,23 +639,27 @@ interval_t* getInterval(int p_key, int s_key){// retorna um vetor com todos os i
 	return result;
 }
 
-inline void copyToArray(interval_t *dst){
-	std::stack<node_t*> stack;
-	node_t *current = tree->root;
-	int index=-1;
-	while(true) {
-		while(current!=NULL) {
-			stack.push(current);
-			current = current->left;
-		}
-		if(stack.empty()) return;
-		current = stack.top();
-		stack.pop();
-		dst->nodes[++index].low = current->interval[0];
-		dst->nodes[index].high = current->interval[1];
-		dst->nodes[index].capacity = current->capacity;
-		current = current->right;
-	}
+inline float getCapacityInterval(interval_t *interval){// retorna um float com a menor capacidade do intervalo
+	float capacity = tree->capacity;
+
+	if(interval==NULL) return capacity;
+
+	for(int i=0; i < interval->size; i++)
+		capacity = getMin(capacity, interval->nodes[i].capacity);
+
+	return capacity;
+}
+
+inline float getMinCapacityInterval(int p_key, int s_key){// retorna um float com a menor capacidade do intervalo
+	interval_t *interval = getInterval(p_key, s_key);
+
+	float capacity = getCapacityInterval(interval);
+
+	interval->clear();
+	free(interval);
+	interval = NULL;
+
+	return capacity;
 }
 
 };
