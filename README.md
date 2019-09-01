@@ -1,6 +1,6 @@
 # Bottleneck Interval Tree
 
-This data structure represents a bottleneck interval tree, a modification of the AVL tree. The tree is used to calculate the minimum capacity in a given interval. The tree can be used in many areas that is needed to represent 2D graphs, in Y axis you has the used capacity and in the X axis the time for example.
+This data structure represents a bottleneck interval tree, being a modification of the AVL tree. The tree is used to calculate the minimum capacity in a given interval. The tree can be used in many areas that is needed to represent 2D graphs, in Y axis you has the used capacity and in the X axis the time for example. All the code is built without recursion.
 
 ### Prerequisites
 
@@ -143,7 +143,39 @@ Case 6
 
 ## Deployment
 
-To use this data structure into your code, just import the header file (.hpp).
+To use this data structure into your code, just import the header file (interval_tree.hpp).
+
+To construct the tree declare an object as:
+
+```
+Interval_Tree::Interval_Tree *interval_tree = new Interval_Tree::Interval_Tree (capacity);
+```
+
+You can choose to not insert an capacity for the tree, then this capacity is set to 0.
+
+To insert a new interval in the tree, just call the insert function with the low and high limits and the corresponding capacity. If you try to insert a new interval that already exists in the tree, the algorithm will only sum the capacities.
+
+```
+interval_tree->insert(low_interval, high_interval, capacity);
+```
+
+To remove an existing interval just call the remove function with the limits and the corresponding capacity. If the capacity to remove from the interval is lower than the current capacity from the node, the algorithm will only reduce the capacity. But, if the capacity to remove and the current node capacity are equals, then the node will be removed.
+
+```
+interval_tree->remove(low_interval, high_interval, capacity);
+```
+
+You have two options to make a search in the tree. The first (getInterval) returns an object of the Interval_Tree::interval_t type. This function returns an array with all the nodes that overlaps the given interval.
+
+```
+interval_tree->getInterval(low_interval, high_interval);
+```
+
+The second search is getMinCapacityInterval that return a float variable that represents the minimum capacity that exists in the tree that overlaps the given interval.
+
+```
+interval_tree->getMinCapacityInterval(low_interval, high_interval);
+```
 
 ## Built With
 
@@ -151,7 +183,7 @@ To use this data structure into your code, just import the header file (.hpp).
 
 ## Authors
 
-* **Leonardo Rosa Rodrigues** - *Initial work* - [PurpleBooth](https://github.com/leorrodrigues)
+* **Leonardo Rosa Rodrigues** - *Initial work* - [Git](https://github.com/leorrodrigues)
 
 ## License
 
