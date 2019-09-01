@@ -1,7 +1,4 @@
-The tests were made in two types
-test_case refers to only insertion and rotation tests
-test2_case refers to deletion tests
-
+Some tests explanation
 Consider the following AVL balanced binary trees for an insert operation:
 
   20+       20+           __20+__
