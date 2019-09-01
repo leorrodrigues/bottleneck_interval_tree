@@ -639,27 +639,20 @@ interval_t* getInterval(int p_key, int s_key){// retorna um vetor com todos os i
 	return result;
 }
 
-inline float getCapacityInterval(interval_t *interval){// retorna um float com a menor capacidade do intervalo
-	float capacity = tree->capacity;
+inline float getMinValueAvailable(int p_key, int s_key){// retorna um float com a menor capacidade do intervalo
+	interval_t *interval = getInterval(p_key, s_key);
+	float capacity = 0;
 
 	if(interval==NULL) return capacity;
 
 	for(int i=0; i < interval->size; i++)
-		capacity = getMin(capacity, interval->nodes[i].capacity);
-
-	return capacity;
-}
-
-inline float getMinCapacityInterval(int p_key, int s_key){// retorna um float com a menor capacidade do intervalo
-	interval_t *interval = getInterval(p_key, s_key);
-
-	float capacity = getCapacityInterval(interval);
+		capacity = getMax(capacity, interval->nodes[i].capacity);
 
 	interval->clear();
 	free(interval);
 	interval = NULL;
 
-	return capacity;
+	return (tree->capacity - capacity);
 }
 
 };

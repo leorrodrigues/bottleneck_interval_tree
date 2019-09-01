@@ -39,7 +39,7 @@ int main(){
 			break;
 		case 5:
 			scanf("%d %d", &key, &key2);
-			printf("Min capacity %f\n", interval_tree->getMinCapacityInterval(key, key2));
+			printf("Min capacity %f\n", interval_tree->getMinValueAvailable(key, key2));
 			break;
 		case 0:
 			delete(interval_tree);
