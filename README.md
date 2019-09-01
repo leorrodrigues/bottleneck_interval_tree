@@ -171,7 +171,7 @@ The getInterval function returns an object of the Interval_Tree::interval_t type
 interval_tree->getInterval(low_interval, high_interval);
 ```
 
-The getMinCapacityInterval function returns a float variable that represents the minimum capacity that exists in the tree that overlaps the given interval.
+The getMinValueAvailable function returns a float variable that represents the minimum capacity that exists in the tree that overlaps the given interval.
 
 ```
 interval_tree->getMinCapacityInterval(low_interval, high_interval);
