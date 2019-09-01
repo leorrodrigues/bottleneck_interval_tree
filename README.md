@@ -1,10 +1,10 @@
 # Bottleneck Interval Tree
 
-This data structure represents a bottleneck interval tree, being a modification of the AVL tree. The tree is used to calculate the minimum capacity in a given interval. The tree can be used in many areas that is needed to represent 2D graphs, in Y axis you has the used capacity and in the X axis the time for example. All the code is built without recursion.
+This data structure represents a bottleneck interval tree, being a modification of the AVL tree. The tree is used to calculate the minimum capacity in a given interval. The tree can be used in many areas that are needed to represent 2D graphs, in Y-axis, you have the used capacity and in the X-axis the time, for example. All the code is built without recursion.
 
 ### Prerequisites
 
-To execute the code, it is needed only a C++ compiler.
+To execute the code is needed only a C++ compiler.
 
 ## Running the tests
 
@@ -14,11 +14,11 @@ To run the tests execute:
     sh run_tests.sh
 ```
 
-The tests execute in two parts, first checking for memory leaks with valgrind and later checking the correctness of the code.
+The tests execute in two parts, first checking for memory leaks with Valgrind and later checking the correctness of the code.
 
 ### Examples
 
-The tree has the same principles as an pure AVL tree. So, the following cases are explored during the tests (described by Griffin in [here](https://stackoverflow.com/questions/3955680/how-to-check-if-my-avl-tree-implementation-is-correct)).
+The tree has the same principles as a pure AVL tree. So, The tests explore the following cases (described by Griffin in [here](https://stackoverflow.com/questions/3955680/how-to-check-if-my-avl-tree-implementation-is-correct)) and other ones.
 
 ```
 Consider the following AVL balanced binary trees for an insert operation:
@@ -31,7 +31,7 @@ Consider the following AVL balanced binary trees for an insert operation:
                      /   / \
                     2   7   11
 
-Inserting either an 8 or a 15 (for example) into any of these trees will trigger essentially the same Left/Right re-balancing, but the end results are significantly different for each tree and insert value. To wit, the final landing place of the inserted value and the final balance factors of node(4) and node(20) are entirely dependent on the relative value of the right child under node(4) - if any. A test solely off any one of these cases does not necessarily prove the correctness of any others. Note: node(4) must initially be balanced for these cases; an initial imbalance in node(4) ultimately has no effect on node(20).
+Inserting either an 8 or a 15 (for example) into any of these trees will trigger essentially the same Left/Right re-balancing, but the results are significantly different for each tree and insert value. To wit, the final landing place of the inserted value and the final balance factors of the node(4) and node(20) are entirely dependent on the relative value of the right child under node(4) - if any. A test solely off any one of these cases does not necessarily prove the correctness of any others. Note: node(4) must initially be balanced for these cases; an initial imbalance in the node(4) ultimately does not affect the node(20).
 
 Case 1a: Insert 15
 
@@ -106,7 +106,7 @@ Now consider these trees for a delete operation:
                             \                     \
                              D                     C
 
-Delete node(1) from each of these trees. Note that Case 1 effectively proves Case 2, but not at all Case 3.
+Delete node(1) from each of these trees. Note that Case 1 conclusively proves Case 2, but not at all Case 3.
 
 Case 4
 
@@ -143,7 +143,7 @@ Case 6
 
 ## Deployment
 
-To use this data structure into your code, just import the header file (interval_tree.hpp).
+To use this data structure into your code, import the header file (interval_tree.hpp).
 
 To construct the tree declare an object as:
 
@@ -151,27 +151,27 @@ To construct the tree declare an object as:
 Interval_Tree::Interval_Tree *interval_tree = new Interval_Tree::Interval_Tree (capacity);
 ```
 
-You can choose to not insert an capacity for the tree, then this capacity is set to 0.
+You can choose not to insert a capacity for the tree, and then this capacity is set to 0.
 
-To insert a new interval in the tree, just call the insert function with the low and high limits and the corresponding capacity. If you try to insert a new interval that already exists in the tree, the algorithm will only sum the capacities.
+To insert a new interval in the tree, call the insert function with the low and high limits and the corresponding capacity. If you try to insert a new interval that already exists in the tree, the algorithm will only sum the capacities.
 
 ```
 interval_tree->insert(low_interval, high_interval, capacity);
 ```
 
-To remove an existing interval just call the remove function with the limits and the corresponding capacity. If the capacity to remove from the interval is lower than the current capacity from the node, the algorithm will only reduce the capacity. But, if the capacity to remove and the current node capacity are equals, then the node will be removed.
+To remove an existing interval, call the remove function with the limits and the corresponding capacity. If the capacity to remove from the interval is lower than the current capacity from the node, the algorithm will only reduce the capacity. However, if the capacity to remove and the current node capacity are equals, then the node will be removed.
 
 ```
 interval_tree->remove(low_interval, high_interval, capacity);
 ```
 
-You have two options to make a search in the tree. The first (getInterval) returns an object of the Interval_Tree::interval_t type. This function returns an array with all the nodes that overlaps the given interval.
+The getInterval function returns an object of the Interval_Tree::interval_t type. This function returns an array with all the nodes that overlap the given interval.
 
 ```
 interval_tree->getInterval(low_interval, high_interval);
 ```
 
-The second search is getMinCapacityInterval that return a float variable that represents the minimum capacity that exists in the tree that overlaps the given interval.
+The getMinCapacityInterval function returns a float variable that represents the minimum capacity that exists in the tree that overlaps the given interval.
 
 ```
 interval_tree->getMinCapacityInterval(low_interval, high_interval);
@@ -179,7 +179,7 @@ interval_tree->getMinCapacityInterval(low_interval, high_interval);
 
 ## Built With
 
-* This software was build purely in C++.
+* This software built purely in C++.
 
 ## Authors
 
