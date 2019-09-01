@@ -2,23 +2,26 @@
 #define _INTERVAL_TREE_
 
 #include <stdlib.h>
-#include <limits.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
+#include <stack>
 
 namespace Interval_Tree {
 
 typedef struct node_interval_t {
-	int min;
-	int max;
+	int low;
+	int high;
 	float capacity;
-	node_interval_t *next;
 } node_interval_t;
 
 typedef struct interval_t {
 	int size;
 	node_interval_t *nodes;
+
+	void clear(){
+		free(nodes);
+		nodes = NULL;
+	}
 } interval_t;
 
 typedef struct node_t {
@@ -26,9 +29,8 @@ typedef struct node_t {
 	int interval[2]; // The interval that the node has [_,-1] to define infinity
 	int height; // The height of the subtree
 
-
+	int max;
 	float capacity; // The total ammount of capacity the current node has available
-
 
 	node_t *left;
 	node_t *right;
@@ -54,6 +56,10 @@ inline int getSize(node_t* node){
 
 inline int getMax(int a, int b){
 	return a>b ? a : b;
+}
+
+inline int getMin(int a, int b){
+	return a>b ? b : a;
 }
 
 inline int getBF(node_t* node){
@@ -114,9 +120,27 @@ void free_nodes(node_t *node){
 	node=NULL;
 }
 
+void copyTree(Interval_Tree *source){
+	int size = source->tree->root->size+1, index=-1, aux=0;
+	node_t** queue = (node_t**)calloc(size, sizeof(node_t*)); //malloc the tree's size (worst case).
+
+	queue[0] = source->tree->root;
+	while(++index < size) {
+		if(queue[index]->left != NULL)
+			queue[++aux] = queue[index]->left;
+
+		if(queue[index]->right != NULL)
+			queue[++aux] = queue[index]->right;
+
+		insert(queue[index]->interval[0], queue[index]->interval[1], queue[index]->capacity);
+	}
+	free(queue);
+	queue=NULL;
+}
+
 public:
 Interval_Tree(float capacity = 0){
-	if((tree = (interval_tree_t*)malloc(sizeof(interval_tree_t)))==NULL) {
+	if((tree = (interval_tree_t*)calloc(1, sizeof(interval_tree_t)))==NULL) {
 		printf("Error in malloc\n");
 		exit(1);
 	}
@@ -140,52 +164,63 @@ void show(){
 	}
 }
 
-void insert(int interval_min, int interval_max, float capacity){
+void insert(int interval_low, int interval_high, float capacity){
+	if(capacity > tree->capacity) {
+		printf("The interval can't consume more capacity than the tree capacity ![%f > %f]\n", capacity, tree->capacity);
+		exit(0);
+	}
 	node_t **path = NULL;
 	int index=-1;
-	int key = interval_min;
+	int key = interval_low;
 	bool hasOverlap = false;
 
 	//allocate the paths size
-	if(tree->root != NULL) {
-		path = (node_t**)malloc(sizeof(node_t*)*(tree->root->height+2)); //allocate the total ammount needed to build the path
-	}
+	if(tree->root != NULL)
+		path = (node_t**)calloc((tree->root->height+3), sizeof(node_t*)); //allocate the total ammount needed to build the path
 
 	//iterate through the tree to get the nodes
 	{
 		node_t *aux = tree->root;
 
-		while(aux != NULL && aux->interval[0] != interval_min) {//while not found an empty child and the current node dont has the same low interval of the new node
+		if(tree->root != NULL && aux->interval[0] == interval_low)
+			path[++index]=tree->root;
+
+		while(aux != NULL && aux->interval[0] != interval_low) {        //while not found an empty child and the current node dont has the same low interval of the new node
 			++index;
 			path[index] = aux;
-			aux = interval_min > aux->interval[0] ? aux->right : aux->left;
+			aux = interval_low > aux->interval[0] ? aux->right : aux->left;
 		}
 
-		//iterate through the nodes that has the same low interval to check the hight interval. If exists a node with the same [a,b] interval, just add the total ammount of
-		while(aux!=NULL && aux->interval[1] != interval_max) {
-			if(interval_max >= aux->interval[1]) {
-				if(aux->right != NULL)
+		if(aux!=NULL) {
+			//iterate through the nodes that has the same low interval to check the hight interval. If exists a node with the same [a,b] interval, just add the total ammount of
+			while(aux->interval[1] != interval_high) {
+				++index;
+				path[index] = aux;
+				if(aux!=NULL) break;
+				if(interval_high >= aux->interval[1]) {
 					aux = aux->right;
-				else
-					break;
-			} else{
-				if(aux->left != NULL)
+				} else {
 					aux = aux->left;
-				else
-					break;
+				}
+
 			}
 		}
 
-		if(aux!=NULL && aux->interval[0] == interval_min && aux->interval[1] == interval_max) {
+		if(aux!=NULL && aux->interval[0] == interval_low && aux->interval[1] == interval_high) {
 			aux->capacity+=capacity;
 			free(path);
 			path=NULL;
+			if(aux->capacity > tree->capacity) {
+				printf("The interval can't consume more capacity than the tree capacity\n");
+				exit(0);
+			}
 			return;
 		}
+
 	}
 
 	node_t *new_node;
-	if((new_node = (node_t*)malloc(sizeof(node_t)))==NULL) {
+	if((new_node = (node_t*)calloc(1, sizeof(node_t)))==NULL) {
 		printf("Error in alocate new node\n");
 		exit(1);
 	}
@@ -195,15 +230,16 @@ void insert(int interval_min, int interval_max, float capacity){
 	new_node->size = 0;
 	new_node->height=0;
 
-	new_node->interval[0] = interval_min;
-	new_node->interval[1] = interval_max;
+	new_node->max = interval_high;
+	new_node->interval[0] = interval_low;
+	new_node->interval[1] = interval_high;
 
 	new_node->capacity = capacity;
 
 	if(index==-1) {
 		tree->root=new_node;
 	}else{
-		if(key > path[index]->interval[0])
+		if(key >= path[index]->interval[0])
 			path[index]->right = new_node;
 		else
 			path[index]->left = new_node;
@@ -217,6 +253,9 @@ void insert(int interval_min, int interval_max, float capacity){
 		path[index]->height = getMax(getHeight(path[index]->left),getHeight(path[index]->right)) + 1;
 
 		path[index]->size = getSize(path[index]->left)+getSize(path[index]->right);
+
+		if(index>0)
+			path[index]->max = getMax(path[index-1]->max, path[index]->max);
 
 		//check the balancing factor
 		bf = getBF(path[index]);
@@ -246,12 +285,12 @@ void insert(int interval_min, int interval_max, float capacity){
 	path=NULL;
 }
 
-void remove(int key, int s_key, float capacity = 0){        //key = min_interval, s_key = max_interval
+void remove(int key, int s_key, float capacity = 0){        //key = low_interval, s_key = high_interval
 	node_t **path = NULL;
 	if(tree->root == NULL)         //empty tree
 		return;
 	else
-		path = (node_t**)malloc(sizeof(node_t*)*(tree->root->height+2));         //allocate the total ammount needed to build the path, it's a ternary pointer to store all the original pointers of Interval_Tree
+		path = (node_t**)calloc((tree->root->height+2), sizeof(node_t*));         //allocate the total ammount needed to build the path, it's a ternary pointer to store all the original pointers of Interval_Tree
 
 	int index=-1;
 
@@ -265,7 +304,6 @@ void remove(int key, int s_key, float capacity = 0){        //key = min_interval
 			}
 			aux = key > aux->interval[0] ? aux->right : aux->left;
 		}
-		// printf("Key found! Cheking for Skey\n");
 		while(aux != NULL && aux->interval[1] != s_key) {
 			aux = s_key > aux->interval[1] ? aux->right : aux->left;
 		}
@@ -291,31 +329,29 @@ void remove(int key, int s_key, float capacity = 0){        //key = min_interval
 
 	int index_sub = index;
 
-	node_t *temp = (node_t*) malloc(sizeof(node_t));
-	if (path[index_sub]->size>1) {         // the node two children
+	node_t *temp; // = (node_t*) malloc(sizeof(node_t));
+	if (path[index_sub]->size>1) { // the node two children
 		temp = path[index_sub]->left;
 		path[++index_sub] = path[index_sub]->left;
-		while(temp->right != NULL) {         // get the node with the largest key in the left subtree of the selected node
+		while(temp->right != NULL) { // get the node with the largest key in the left subtree of the selected node
 			path[++index_sub] = path[index_sub]->right;
 			temp = temp->right;
 		}
 
 		if(index>0) {
-			if(path[index]->right != temp) {
+			if(path[index]->right != temp)
 				temp->right = path[index]->right;
-			}
-			if(path[index]->left != temp) {
+
+			if(path[index]->left != temp)
 				temp->left = path[index]->left;
-			}
 			if(path[index-1]->left->interval[0]>temp->interval[0])
 				path[index-1]->left = temp;
 			else
 				path[index-1]->right = temp;
-			if(path[index_sub-1]->left==path[index_sub]) {
+			if(path[index_sub-1]->left==path[index_sub])
 				path[index_sub-1]->left = NULL;
-			} else{
+			else
 				path[index_sub-1]->right = NULL;
-			}
 			free(path[index]);
 			path[index] = temp;
 			path[index_sub] = NULL;
@@ -332,7 +368,7 @@ void remove(int key, int s_key, float capacity = 0){        //key = min_interval
 			path[index] = temp;
 			tree->root = temp;
 		}
-	} else {         // the node has at maximum one child
+	} else { // the node has at least one child
 		if(path[index_sub]->left==NULL && path[index_sub]->right==NULL) {         //no child
 			if(index_sub>0) {
 				if(path[index_sub-1]->left == path[index_sub]) {
@@ -364,16 +400,18 @@ void remove(int key, int s_key, float capacity = 0){        //key = min_interval
 				}
 				path[index_sub] = temp;
 			}else{
-				if(path[index]->left != NULL)
+				if(path[index]->left != NULL) {
 					temp = path[index]->left;
-				else
+				} else {
 					temp = path[index]->right;
+				}
 				free(tree->root);
 				tree->root = temp;
 				path[index] = temp;
 			}
 		}
 	}
+
 	index = index_sub;         // remove the last element index
 	int bf;
 	while(index>=0) {         // returning the path, updating the nodes' height and check if is needed to make some rotation.
@@ -382,29 +420,31 @@ void remove(int key, int s_key, float capacity = 0){        //key = min_interval
 			--index;
 			continue;
 		}
+
 		path[index]->height = getMax(getHeight(path[index]->left),getHeight(path[index]->right)) + 1;
+
 		path[index]->size = getSize(path[index]->left)+getSize(path[index]->right);
+
+		if(index>0)
+			path[index]->max = getMax(path[index-1]->max, path[index]->max);
+
 		//check the balancing factor
 		bf = getBF(path[index]);
 
-		// printf("BF %d\n",bf);
 		if(bf > 1 && getBF(path[index]->right) >= 0) {         // single left
 			single_rotate_left(path[index]);
 			bf = getBF(path[index]);
 		}
 		if(bf < -1 && getBF(path[index]->left) < 0) {         // single right
-			// printf("SINGLE RIGHT\n");
 			single_rotate_right(path[index]);
 			bf = getBF(path[index]);
 		}
 		if(bf > 1 && getBF(path[index]->right) < 0) {         // double left
-			// printf("DOUBLE LEFT\n");
 			single_rotate_right(path[index]->right);
 			single_rotate_left(path[index]);
 			bf = getBF(path[index]);
 		}
 		if(bf < -1 && getBF(path[index]->left) >= 0) {         // double right
-			// printf("DOUBLE RIGHT\n");
 			single_rotate_left(path[index]->left);
 			single_rotate_right(path[index]);
 			bf = getBF(path[index]);
@@ -416,29 +456,213 @@ void remove(int key, int s_key, float capacity = 0){        //key = min_interval
 	path=NULL;
 }
 
-//TODO
-float getMinCapacityInterval(int p_key, int s_key){         // retorna um vetor com todos os nós que possuem o intervalo
-	node_t** queue = (node_t**)malloc(sizeof(node_t*)*(tree->root->size+1));         //malloc the tree's size (worst case).
-	float min_cap = tree->capacity;         //the maximum capacity is the tree capacity
+inline bool hasOverlap(int low1, int high1, int low2, int high2){
+	if ((low1 < high2 && low2 < high1) || (low1 > high2 && low2 > high1)) {
+		return true;
+	}
+	return false;
+}
+
+float getMinCapacityInterval(int p_key, int s_key){// retorna um float com a menor capacidade do intervalo
+	node_t** queue = (node_t**) calloc ((tree->root->size+1), sizeof(node_t*));         //malloc the tree's size (worst case).
+	float low_cap = tree->capacity;         //the highimum capacity is the tree capacity
 	int index=-1,aux=0, size = tree->root->size+1;
 
 	queue[0] = tree->root;
 
 	while(queue[++index] != NULL && index < size) {
-		if(queue[index]==NULL) printf("NAO FAZ SENTIDO\n");
-		if( p_key<=queue[index]->interval[1] && queue[index]->interval[0]<=s_key && queue[index]->capacity<min_cap) {
-			min_cap = queue[index]->capacity;         //get the min capacity of the overlaped node
-		}
-		if(queue[index]->left!=NULL && p_key <= queue[index]->left->interval[1] && queue[index]->left->interval[0] <= s_key) {
+		if( hasOverlap(p_key, s_key, queue[index]->interval[0], queue[index]->interval[1]) && queue[index]->capacity<low_cap)
+			low_cap = queue[index]->capacity;         //get the low capacity of the overlaped node
+
+		if(queue[index]->left!=NULL && p_key <= queue[index]->left->max)
 			queue[++aux] = queue[index]->left;
-		}
-		if(queue[index]->right!=NULL && p_key <= queue[index]->right->interval[1] && queue[index]->right->interval[0] <= s_key) {
+
+		if(queue[index]->right!=NULL && p_key <= queue[index]->right->max)
 			queue[++aux] = queue[index]->right;
+
+	}
+	free(queue);
+	return low_cap;
+}
+
+inline node_t *overlapSearch(node_t *start, node_t *node) {
+	int index=-1,aux=-1, size = start->size+1;
+	node_t** queue = (node_t**)calloc(size, sizeof(node_t*)); //malloc the tree's size (worst case).
+	if(start->interval[0] == node->interval[0] && start->interval[1] == node->interval[1]) {
+		if(node->left!=NULL)
+			queue[++aux] = node->left;
+		if(node->right!=NULL)
+			queue[++aux] = node->right;
+	}else{
+		queue[++aux] = start;
+	}
+
+	while(++index < size) {
+		if(queue[index] != NULL) {
+			if(queue[index]->left!=NULL && node->interval[0] <= queue[index]->left->max)
+				queue[++aux] = queue[index]->left;
+
+			if(queue[index]->right!=NULL && node->interval[0] <= queue[index]->right->max) queue[++aux] = queue[index]->right;
+
+			if (queue[index]->interval[0] == node->interval[0] && queue[index]->interval[1] == node->interval[1]) continue;
+
+			if( hasOverlap(node->interval[0], node->interval[1], queue[index]->interval[0], queue[index]->interval[1])) {
+				node_t *temp = queue[index];
+				free(queue);
+				return temp;
+			}
 		}
 	}
-	return min_cap;
+	free(queue);
+	return NULL;
+}
+
+interval_t* getInterval(int p_key, int s_key){// retorna um vetor com todos os intervalos e seus consumos de recursos
+	Interval_Tree result_tree(tree->capacity);
+	{
+		Interval_Tree aux_tree(tree->capacity);
+		//At first, it is needed to transform the tree to make the tree contain only nodes that overlap the interval [p_key, s_key].
+
+		{
+			int index=-1,aux=0, size = tree->root->size+1, low, high;
+			float c;
+			node_t** queue = (node_t**)calloc(size, sizeof(node_t*)); //malloc the tree's size (worst case).
+			queue[0] = tree->root;
+
+			while(++index < size) {
+				if(queue[index] == NULL)
+					break;
+
+				if( hasOverlap(p_key, s_key, queue[index]->interval[0], queue[index]->interval[1])) {
+					low = queue[index]->interval[0]  < p_key ? p_key :  queue[index]->interval[0];
+
+					high = queue[index]->interval[1]  > s_key ? s_key :  queue[index]->interval[1];
+					aux_tree.insert(low, high, queue[index]->capacity);
+				}
+
+				if(queue[index]->left!=NULL && p_key <= queue[index]->left->max)
+					queue[++aux] = queue[index]->left;
+
+				if(queue[index]->right!=NULL && p_key <= queue[index]->right->max)
+					queue[++aux] = queue[index]->right;
+
+			}
+			free(queue);
+			if(aux_tree.tree->root == NULL) // the interval don't overlap any node. Just return NULL.
+				return NULL;
+		}
+		// After the new tree is built, merge the nodes that contain some type of overlap.
+		{
+			int index=0,aux=0, size = aux_tree.tree->root->size+1, low, high;
+			float c, c_temp;
+			node_t** queue = (node_t**)calloc(size+2, sizeof(node_t*)); //malloc the tree's size (worst case).
+			node_t *temp = NULL;
+			queue[index] = aux_tree.tree->root;
+
+			while(index < aux_tree.tree->root->size+1) {
+				if(queue[index] == NULL) {
+					continue;
+				}
+				temp = overlapSearch(aux_tree.tree->root, queue[index]);
+				if(temp==NULL) {        // if the current node don't has any other node that contain an overlaping
+					//Insert the children in queue
+					if(queue[index]->left!=NULL && p_key <= queue[index]->left->max)
+						queue[++aux] = queue[index]->left;
+
+					if(queue[index]->right!=NULL && p_key <= queue[index]->right->max)
+						queue[++aux] = queue[index]->right;
+
+					// Update the index to get the next node
+					++index;
+				}else{ // the current node has overlaping, update the limits and capacities.
+					if (queue[index]->interval[0] != temp->interval[0] && queue[index]->interval[1] != temp->interval[1]) { // the merge will create a new node
+						// Updating the nodes
+						low = getMin(queue[index]->interval[0], temp->interval[0]);
+						queue[index]->interval[0] = getMax(queue[index]->interval[0], temp->interval[0]);
+						temp->interval[0] = low;
+
+						high = getMax(queue[index]->interval[1], temp->interval[1]);
+
+						queue[index]->interval[1] = getMin(queue[index]->interval[1], temp->interval[1]);
+						temp->interval[1] = queue[index]->interval[0];
+
+						low = queue[index]->interval[1];
+						c_temp = temp->capacity;
+						c = queue[index]->capacity;
+						queue[index]->capacity += temp->capacity;
+						temp->capacity = c;
+						aux_tree.insert(low, high, c_temp);
+					}else if(queue[index]->interval[0] == temp->interval[0]) { // only update the current nodes
+						if(queue[index]->interval[1] > temp->interval[1]) {
+							queue[index]->capacity += temp->capacity;
+						}else{
+							c = temp->capacity;
+							temp->capacity += queue[index]->capacity;
+							queue[index]->capacity = c;
+						}
+						// Updating the nodes
+						high = getMax(queue[index]->interval[1], temp->interval[1]);
+
+						queue[index]->interval[0] = getMin(queue[index]->interval[1], temp->interval[1]);
+
+						queue[index]->interval[1] = high;
+						temp->interval[1] = queue[index]->interval[0];
+
+					}else if(queue[index]->interval[1] == temp->interval[1]) {
+						if(queue[index]->interval[0] > temp->interval[0]) {
+							queue[index]->capacity += temp->capacity;
+						}else{
+							c = queue[index]->capacity;
+							queue[index]->capacity += temp->capacity;
+							temp->capacity = c;
+						}
+
+						// Updating the nodes
+						low = getMin(queue[index]->interval[0], temp->interval[0]);
+
+						temp->interval[1] = getMax(queue[index]->interval[0], temp->interval[0]);
+						temp->interval[0] = low;
+						queue[index]->interval[0] = temp->interval[1];
+					}
+				}
+			}
+			free(queue);
+		}
+		result_tree.copyTree(&aux_tree);
+	}
+	//Finally, when the merge of all nodes were done, convert the tree into a sorted array. To do that, get the left subtree first, then the parent node and then the right subtree.
+
+	interval_t *result = (interval_t*) calloc (1, sizeof(interval_t));
+
+	result->size = result_tree.tree->root->size+1;
+	result->nodes = (node_interval_t*) calloc (result->size, sizeof(node_interval_t));
+
+	result_tree.copyToArray(result);
+
+	// Return the array.
+	return result;
+}
+
+inline void copyToArray(interval_t *dst){
+	std::stack<node_t*> stack;
+	node_t *current = tree->root;
+	int index=-1;
+	while(true) {
+		while(current!=NULL) {
+			stack.push(current);
+			current = current->left;
+		}
+		if(stack.empty()) return;
+		current = stack.top();
+		stack.pop();
+		dst->nodes[++index].low = current->interval[0];
+		dst->nodes[index].high = current->interval[1];
+		dst->nodes[index].capacity = current->capacity;
+		current = current->right;
+	}
 }
 
 };
+
 }
 #endif

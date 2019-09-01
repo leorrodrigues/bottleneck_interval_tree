@@ -21,11 +21,17 @@ int main(){
 		case 3:
 			scanf("%d %d", &key, &key2);
 			{
-				float cap = interval_tree->getMinCapacityInterval(key,key2);
-				// if(temp!=NULL)
-				std::cout<<"Node ["<<key<<";"<<key2<<"] found! Capacity "<<cap<<"\n";
-				// else
-				// 	std::cout<<"Node not found\n";
+				Interval_Tree::interval_t *result = interval_tree->getInterval(key,key2);
+
+				if(result!=NULL) {
+					for(int i=0; i<result->size; i++)
+						std::cout<<"["<<result->nodes[i].low<<","<<result->nodes[i].high<<"]=>"<<result->nodes[i].capacity<<"\n";
+					result->clear();
+					free(result);
+					result = NULL;
+				}else{
+					std::cout<<"Node not found\n";
+				}
 			}
 			break;
 		case 4:

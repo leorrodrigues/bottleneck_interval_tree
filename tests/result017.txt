@@ -1,0 +1,6 @@
+The Bottleneck Interval Tree has 2 elements.
+Node in [5,7] # Elements: 1 # Height 1 # Capacity: 2.000000
+	Node: NULL
+	Node in [5,10] # Elements: 0 # Height 0 # Capacity: 2.000000
+		Node: NULL
+		Node: NULL
