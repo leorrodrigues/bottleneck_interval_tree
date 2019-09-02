@@ -6,6 +6,8 @@
 #include <string.h>
 #include <stack>
 
+#include "spdlog/spdlog.h"
+
 namespace Interval_Tree {
 
 typedef struct node_interval_t {
@@ -98,16 +100,16 @@ inline void single_rotate_right(node_t* x){
 }
 
 void show_bf(node_t *node,unsigned int tab){
-	int i=0;
+	unsigned int i=0;
 	if(node==NULL) {
 		for(i=0; i<tab; i++)
-			printf("\t");
-		printf("Node: NULL\n");
+			spdlog::debug("\t");
+		spdlog::debug("Node: NULL\n");
 		return;
 	}
 	for(i=0; i<tab; i++)
-		printf("\t");
-	printf("Node in [%d,%d] # Elements: %u # Height %d # Capacity: %f\n", node->interval[0], node->interval[1], node->size, node->height, node->capacity);
+		spdlog::debug("\t");
+	spdlog::debug("Node in [{},{}] # Elements: {} # Height {} # Capacity: {}\n", node->interval[0], node->interval[1], node->size, node->height, node->capacity);
 	show_bf(node->left,tab+1);
 	show_bf(node->right,tab+1);
 }
@@ -199,7 +201,7 @@ inline node_t *overlapSearch(node_t *start, node_t *node) {
 public:
 Interval_Tree(float capacity = 0){
 	if((tree = (interval_tree_t*)calloc(1, sizeof(interval_tree_t)))==NULL) {
-		printf("Error in malloc\n");
+		SPDLOG_ERROR("Error in malloc\n");
 		exit(1);
 	}
 	tree->root=NULL;
@@ -213,24 +215,23 @@ Interval_Tree(float capacity = 0){
 }
 
 void show(){
-	printf("The Bottleneck Interval Tree ");
+	spdlog::debug("The Bottleneck Interval Tree ");
 	if(tree->root==NULL) {
-		printf("don't has any elements.\n");
+		spdlog::debug("don't has any elements.\n");
 	}else{
-		printf("has %u elements.\n", tree->root->size+1);
+		spdlog::debug("has {} elements.\n", tree->root->size+1);
 		show_bf(tree->root, 0);
 	}
 }
 
 void insert(int interval_low, int interval_high, float capacity){
 	if(capacity > tree->capacity) {
-		printf("The interval can't consume more capacity than the tree capacity ![%f > %f]\n", capacity, tree->capacity);
+		SPDLOG_ERROR("The interval can't consume more capacity than the tree capacity ![{} > {}]\n", capacity, tree->capacity);
 		exit(0);
 	}
 	node_t **path = NULL;
 	int index=-1;
 	int key = interval_low;
-	bool hasOverlap = false;
 
 	//allocate the paths size
 	if(tree->root != NULL)
@@ -269,7 +270,7 @@ void insert(int interval_low, int interval_high, float capacity){
 			free(path);
 			path=NULL;
 			if(aux->capacity > tree->capacity) {
-				printf("The interval can't consume more capacity than the tree capacity\n");
+				SPDLOG_ERROR("The interval can't consume more capacity than the tree capacity\n");
 				exit(0);
 			}
 			return;
@@ -279,7 +280,7 @@ void insert(int interval_low, int interval_high, float capacity){
 
 	node_t *new_node;
 	if((new_node = (node_t*)calloc(1, sizeof(node_t)))==NULL) {
-		printf("Error in alocate new node\n");
+		SPDLOG_ERROR("Error in alocate new node\n");
 		exit(1);
 	}
 
@@ -368,12 +369,12 @@ void remove(int key, int s_key, float capacity = 0){        //key = low_interval
 		if(aux==NULL) {         // didn't find any child that hold the key for deletion
 			free(path);         // Free the parh variable
 			path=NULL;
-			printf("Don't existis any node that holds the specific interval [%d;%d]\n", key, s_key);
+			spdlog::debug("Don't existis any node that holds the specific interval [{};{}]\n", key, s_key);
 			return;
 		}else if(aux->interval[1] == s_key) {
 			aux->capacity-=capacity;
 			if(aux->capacity<0) {
-				printf("Error Negative Capacity\n");
+				SPDLOG_ERROR("Error Negative Capacity\n");
 				free(path);
 				path=NULL;
 				exit(0);
@@ -390,9 +391,11 @@ void remove(int key, int s_key, float capacity = 0){        //key = low_interval
 	node_t *temp; // = (node_t*) malloc(sizeof(node_t));
 	if (path[index_sub]->size>1) { // the node two children
 		temp = path[index_sub]->left;
-		path[++index_sub] = path[index_sub]->left;
+		path[index_sub+1] = path[index_sub]->left;
+		++index_sub;
 		while(temp->right != NULL) { // get the node with the largest key in the left subtree of the selected node
-			path[++index_sub] = path[index_sub]->right;
+			path[index_sub+1] = path[index_sub]->right;
+			++index_sub;
 			temp = temp->right;
 		}
 
@@ -521,7 +524,6 @@ interval_t* getInterval(int p_key, int s_key){// retorna um vetor com todos os i
 		//At first, it is needed to transform the tree to make the tree contain only nodes that overlap the interval [p_key, s_key].
 		{
 			int index=-1,aux=0, size = tree->root->size+1, low, high;
-			float c;
 			node_t** queue = (node_t**)calloc(size, sizeof(node_t*)); //malloc the tree's size (worst case).
 			queue[0] = tree->root;
 
@@ -555,7 +557,7 @@ interval_t* getInterval(int p_key, int s_key){// retorna um vetor com todos os i
 			node_t *temp = NULL;
 			queue[index] = aux_tree.tree->root;
 
-			while(index < aux_tree.tree->root->size+1) {
+			while((unsigned int)index < aux_tree.tree->root->size+1) {
 				if(queue[index] == NULL) {
 					continue;
 				}

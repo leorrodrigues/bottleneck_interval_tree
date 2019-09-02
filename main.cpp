@@ -1,36 +1,43 @@
-#include <iostream>
+#define SPDLOG_TRACE_ON
+#define SPDLOG_DEBUG_ON
+#define SPDLOG_EOL ""
 
 #include "interval_tree.hpp"
 
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+
 int main(){
+	spdlog::set_level(spdlog::level::debug);     // Set global log level to debug
+	spdlog::set_pattern("%v"); // change the log pattern
 	Interval_Tree::Interval_Tree *interval_tree = new Interval_Tree::Interval_Tree(100);
 	unsigned int op=1;
 	int key=0, key2=0;
 	float capacity=0;
 	while(op!=0) {
-		scanf("%d ",&op);
+		if(scanf("%d ",&op)==0) SPDLOG_ERROR("CANT READ THE OP\n");
 		switch(op) {
 		case 1:
-			scanf("%d %d %f",&key,&key2,&capacity);
+			if(scanf("%d %d %f",&key,&key2,&capacity)==0) SPDLOG_ERROR("CANT READ THE VALUES TO INSERT NODE");
 			interval_tree->insert(key,key2,capacity);
 			break;
 		case 2:
-			scanf("%d %d %f",&key,&key2, &capacity);
+			if(scanf("%d %d %f",&key,&key2, &capacity)==0) SPDLOG_ERROR("CANT READ THE VALUES TO REMOVE NODE");
 			interval_tree->remove(key,key2,capacity);
 			break;
 		case 3:
-			scanf("%d %d", &key, &key2);
+			if(scanf("%d %d", &key, &key2)==0) SPDLOG_ERROR("CANT READ THE VALUES TO GET THE INTERVAL NODE(S)");
 			{
 				Interval_Tree::interval_t *result = interval_tree->getInterval(key,key2);
 
 				if(result!=NULL) {
 					for(int i=0; i<result->size; i++)
-						std::cout<<"["<<result->nodes[i].low<<","<<result->nodes[i].high<<"]=>"<<result->nodes[i].capacity<<"\n";
+						spdlog::debug("[{},{}]=>{}\n", result->nodes[i].low, result->nodes[i].high, result->nodes[i].capacity);
 					result->clear();
 					free(result);
 					result = NULL;
 				}else{
-					std::cout<<"Node not found\n";
+					spdlog::debug("Node not found\n");
 				}
 			}
 			break;
@@ -38,14 +45,14 @@ int main(){
 			interval_tree->show();
 			break;
 		case 5:
-			scanf("%d %d", &key, &key2);
-			printf("Min capacity %f\n", interval_tree->getMinValueAvailable(key, key2));
+			if(scanf("%d %d", &key, &key2)==0) SPDLOG_ERROR("CANT READ THE VALUES TO GET THE MIN CAPACITY AVAILABLE FROM INTERVAL");
+			spdlog::debug("Min capacity {}\n", interval_tree->getMinValueAvailable(key, key2));
 			break;
 		case 0:
 			delete(interval_tree);
 			break;
 		default:
-			std::cout<<"Valor invalido "<<op<<"\n";
+			spdlog::debug("Valor invalido {}\n",op);
 			break;
 		}
 	}
