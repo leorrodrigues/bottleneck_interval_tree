@@ -1,14 +1,14 @@
 The Bottleneck Interval Tree has 6 elements.
-Node in [9,10] # Elements: 5 # Height 2 # Capacity: 6.000000
-	Node in [4,5] # Elements: 1 # Height 1 # Capacity: 9.000000
-		Node in [3,4] # Elements: 0 # Height 0 # Capacity: 7.000000
+Node in [9,10] # Elements: 5 # Height 2 # Capacity: 6
+	Node in [4,5] # Elements: 1 # Height 1 # Capacity: 9
+		Node in [3,4] # Elements: 0 # Height 0 # Capacity: 7
 			Node: NULL
 			Node: NULL
 		Node: NULL
-	Node in [20,21] # Elements: 2 # Height 1 # Capacity: 10.000000
-		Node in [15,16] # Elements: 0 # Height 0 # Capacity: 5.000000
+	Node in [20,21] # Elements: 2 # Height 1 # Capacity: 10
+		Node in [15,16] # Elements: 0 # Height 0 # Capacity: 5
 			Node: NULL
 			Node: NULL
-		Node in [26,27] # Elements: 0 # Height 0 # Capacity: 8.000000
+		Node in [26,27] # Elements: 0 # Height 0 # Capacity: 8
 			Node: NULL
 			Node: NULL

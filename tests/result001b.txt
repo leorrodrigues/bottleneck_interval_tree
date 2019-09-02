@@ -1,8 +1,8 @@
 The Bottleneck Interval Tree has 3 elements.
-Node in [8,9] # Elements: 2 # Height 1 # Capacity: 8.000000
-	Node in [4,5] # Elements: 0 # Height 0 # Capacity: 9.000000
+Node in [8,9] # Elements: 2 # Height 1 # Capacity: 8
+	Node in [4,5] # Elements: 0 # Height 0 # Capacity: 9
 		Node: NULL
 		Node: NULL
-	Node in [20,21] # Elements: 0 # Height 0 # Capacity: 10.000000
+	Node in [20,21] # Elements: 0 # Height 0 # Capacity: 10
 		Node: NULL
 		Node: NULL

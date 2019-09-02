@@ -1,24 +1,24 @@
 The Bottleneck Interval Tree has 11 elements.
-Node in [5,6] # Elements: 10 # Height 3 # Capacity: 15.000000
-	Node in [2,3] # Elements: 3 # Height 2 # Capacity: 14.000000
-		Node in [1,2] # Elements: 0 # Height 0 # Capacity: 12.000000
+Node in [5,6] # Elements: 10 # Height 3 # Capacity: 15
+	Node in [2,3] # Elements: 3 # Height 2 # Capacity: 14
+		Node in [1,2] # Elements: 0 # Height 0 # Capacity: 12
 			Node: NULL
 			Node: NULL
-		Node in [3,4] # Elements: 1 # Height 1 # Capacity: 11.000000
+		Node in [3,4] # Elements: 1 # Height 1 # Capacity: 11
 			Node: NULL
-			Node in [4,5] # Elements: 0 # Height 0 # Capacity: 8.000000
+			Node in [4,5] # Elements: 0 # Height 0 # Capacity: 8
 				Node: NULL
 				Node: NULL
-	Node in [11,12] # Elements: 5 # Height 2 # Capacity: 9.000000
-		Node in [7,8] # Elements: 2 # Height 1 # Capacity: 10.000000
-			Node in [6,7] # Elements: 0 # Height 0 # Capacity: 7.000000
+	Node in [11,12] # Elements: 5 # Height 2 # Capacity: 9
+		Node in [7,8] # Elements: 2 # Height 1 # Capacity: 10
+			Node in [6,7] # Elements: 0 # Height 0 # Capacity: 7
 				Node: NULL
 				Node: NULL
-			Node in [9,10] # Elements: 0 # Height 0 # Capacity: 6.000000
+			Node in [9,10] # Elements: 0 # Height 0 # Capacity: 6
 				Node: NULL
 				Node: NULL
-		Node in [15,16] # Elements: 1 # Height 1 # Capacity: 5.000000
+		Node in [15,16] # Elements: 1 # Height 1 # Capacity: 5
 			Node: NULL
-			Node in [20,21] # Elements: 0 # Height 0 # Capacity: 4.000000
+			Node in [20,21] # Elements: 0 # Height 0 # Capacity: 4
 				Node: NULL
 				Node: NULL

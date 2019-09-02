@@ -1,1 +1,1 @@
-Min capacity 88.000000
+Min capacity 88
