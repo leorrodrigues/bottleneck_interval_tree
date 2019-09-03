@@ -1,0 +1,13 @@
+The Bottleneck Interval Tree has 1 elements.
+Node in [10,15] # Elements: 0 # Height 0 # Capacity: 3
+	Node: NULL
+	Node: NULL
+The Bottleneck Interval Tree has 1 elements.
+Node in [11,15] # Elements: 0 # Height 0 # Capacity: 7
+	Node: NULL
+	Node: NULL
+Don't existis any node that holds the specific interval [11;15]
+The Bottleneck Interval Tree has 1 elements.
+Node in [10,15] # Elements: 0 # Height 0 # Capacity: 3
+	Node: NULL
+	Node: NULL
