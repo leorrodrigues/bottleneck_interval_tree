@@ -657,6 +657,56 @@ inline float getMinValueAvailable(int p_key, int s_key){// retorna um float com 
 	return (tree->capacity - capacity);
 }
 
+Interval_Tree& operator+= (Interval_Tree& rhs){
+	int index=-1,aux=0, size = rhs.tree->root->size+1;
+	node_t** queue = (node_t**)calloc(size, sizeof(node_t*));         //malloc the tree's size (worst case).
+	this->tree->capacity += rhs.tree->capacity;
+	queue[0] = rhs.tree->root;
+
+	while(++index < size) {
+		if(queue[index] == NULL)
+			break;
+
+		this->insert(queue[index]->interval[0], queue[index]->interval[1], queue[index]->capacity);
+
+		if(queue[index]->left!=NULL)
+			queue[++aux] = queue[index]->left;
+
+		if(queue[index]->right!=NULL)
+			queue[++aux] = queue[index]->right;
+
+	}
+	free(queue);
+	return *this;
+}
+
+Interval_Tree& operator-= (Interval_Tree& rhs){
+	int index=-1,aux=0, size = rhs.tree->root->size+1;
+	node_t** queue = (node_t**)calloc(size, sizeof(node_t*));         //malloc the tree's size (worst case).
+	if(rhs.tree->capacity > this->tree->capacity) {
+		SPDLOG_ERROR("The tree can't has capacity less than 0\n");
+		return *this;
+	}
+	this->tree->capacity -= rhs.tree->capacity;
+	queue[0] = rhs.tree->root;
+
+	while(++index < size) {
+		if(queue[index] == NULL)
+			break;
+
+		this->remove(queue[index]->interval[0], queue[index]->interval[1], queue[index]->capacity);
+
+		if(queue[index]->left!=NULL)
+			queue[++aux] = queue[index]->left;
+
+		if(queue[index]->right!=NULL)
+			queue[++aux] = queue[index]->right;
+
+	}
+	free(queue);
+	return *this;
+}
+
 };
 
 }

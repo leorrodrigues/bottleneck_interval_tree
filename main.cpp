@@ -11,6 +11,7 @@ int main(){
 	spdlog::set_level(spdlog::level::debug);     // Set global log level to debug
 	spdlog::set_pattern("%v"); // change the log pattern
 	Interval_Tree::Interval_Tree *interval_tree = new Interval_Tree::Interval_Tree(100);
+	Interval_Tree::Interval_Tree *interval_tree_aux = new Interval_Tree::Interval_Tree(100);
 	unsigned int op=1;
 	int key=0, key2=0;
 	float capacity=0;
@@ -48,8 +49,26 @@ int main(){
 			if(scanf("%d %d", &key, &key2)==0) SPDLOG_ERROR("CANT READ THE VALUES TO GET THE MIN CAPACITY AVAILABLE FROM INTERVAL");
 			spdlog::debug("Min capacity {}\n", interval_tree->getMinValueAvailable(key, key2));
 			break;
+		case 6:
+			if(scanf("%d %d %f",&key,&key2,&capacity)==0) SPDLOG_ERROR("CANT READ THE VALUES TO INSERT NODE IN AUX TREE");
+			interval_tree_aux->insert(key,key2,capacity);
+			break;
+		case 7:
+			if(scanf("%d %d %f",&key,&key2,&capacity)==0) SPDLOG_ERROR("CANT READ THE VALUES TO REMOVE NODE IN AUX TREE");
+			interval_tree_aux->remove(key,key2,capacity);
+			break;
+		case 8:
+			(*interval_tree) += (*interval_tree_aux);
+			break;
+		case 9:
+			(*interval_tree) -= (*interval_tree_aux);
+			break;
+		case 10:
+			interval_tree_aux->show();
+			break;
 		case 0:
 			delete(interval_tree);
+			delete(interval_tree_aux);
 			break;
 		default:
 			spdlog::debug("Valor invalido {}\n",op);
