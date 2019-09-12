@@ -6,4 +6,4 @@ The Bottleneck Interval Tree has 1 elements.
 Node in [10,15] # Elements: 0 # Height 0 # Capacity: 7
 	Node: NULL
 	Node: NULL
-Error Negative Capacity
+The capacity to remove is higher than the current node has! To remove 3, has 7

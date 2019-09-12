@@ -8,7 +8,7 @@ Node in [10,14] # Elements: 0 # Height 0 # Capacity: 7
 	Node: NULL
 The Bottleneck Interval Tree has 2 elements.
 Node in [10,15] # Elements: 1 # Height 1 # Capacity: 3
-	Node: NULL
 	Node in [10,14] # Elements: 0 # Height 0 # Capacity: 7
 		Node: NULL
 		Node: NULL
+	Node: NULL
