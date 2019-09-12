@@ -16,7 +16,7 @@ int main(){
 	int key=0, key2=0;
 	float capacity=0;
 	while(op!=0) {
-		if(scanf("%d ",&op)==0) SPDLOG_ERROR("CANT READ THE OP\n");
+		if(scanf("%d",&op)==0) SPDLOG_ERROR("CANT READ THE OP\n");
 		switch(op) {
 		case 1:
 			if(scanf("%d %d %f",&key,&key2,&capacity)==0) SPDLOG_ERROR("CANT READ THE VALUES TO INSERT NODE");
@@ -31,7 +31,7 @@ int main(){
 			{
 				Interval_Tree::interval_t *result = interval_tree->getInterval(key,key2);
 
-				if(result!=NULL) {
+				if(result != NULL) {
 					for(int i=0; i<result->size; i++)
 						spdlog::debug("[{},{}]=>{}\n", result->nodes[i].low, result->nodes[i].high, result->nodes[i].capacity);
 					result->clear();
